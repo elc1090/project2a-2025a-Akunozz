@@ -59,6 +59,47 @@ gitHubForm.addEventListener('submit', (e) => {
 })
 
 function requestUserRepos(username) {
-    // create a variable to hold the `Promise` returned from `fetch`
     return Promise.resolve(fetch(`https://api.github.com/users/${username}/repos`));
 }
+
+const commitForm = document.getElementById('commitForm');
+
+commitForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+
+    const username = document.getElementById('commitUsername').value;
+    const repo = document.getElementById('commitRepo').value;
+
+    const commitList = document.getElementById('commitList');
+    commitList.innerHTML = '';
+
+    fetch(`https://api.github.com/repos/${username}/${repo}/commits`)
+        .then(res => {
+            if (!res.ok) {
+                throw new Error('Erro ao buscar commits');
+            }
+            return res.json();
+        })
+        .then(data => {
+            if (data.length === 0) {
+                commitList.innerHTML = `<li class="list-group-item">Nenhum commit encontrado.</li>`;
+                return;
+            }
+
+            data.forEach(commit => {
+                const li = document.createElement('li');
+                li.classList.add('list-group-item');
+                li.innerHTML = `
+                    <p><strong>Mensagem:</strong> ${commit.commit.message}</p>
+                    <p><strong>Data:</strong> ${new Date(commit.commit.author.date).toLocaleString()}</p>
+                `;
+                commitList.appendChild(li);
+            });
+        })
+        .catch(error => {
+            const li = document.createElement('li');
+            li.classList.add('list-group-item', 'text-danger');
+            li.textContent = `Erro: ${error.message}. Nome do usuário ou do repositório não encontrados.`;
+            commitList.appendChild(li);
+        });
+});
